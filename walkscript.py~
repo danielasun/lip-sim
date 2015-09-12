@@ -9,14 +9,14 @@ footPlacement = (0, 0)
 
 
 # choose style of walking.
-walkstyle = "b"
+walkstyle = "sw"
 
 s_x = []
 s_y = []
 
 if walkstyle == "b": # basic walking
-    s_x = [0, .3, .3, .3, .3, .3, 0]
-    s_y = [.2, .2, .2, .2, .2, .2, 0]
+    s_x = [0, 0, .3, .3, .3, .3, .3, 0]
+    s_y = [0,.2, .2, .2, .2, .2, .2, 0]
 if walkstyle == "my":  # minimal side to side movement
     s_x = [0, .2, .2, .2, .2, .2, .2, 0]
     s_y = [0,  0,  0, 0, 0, 0, 0, 0]
@@ -25,7 +25,7 @@ if walkstyle == "sw":  # sidewalking
     s_y = [0, .2, .2, .2, .2, .2, .2, 0]
 
 stepOffsets = zip(s_x, s_y)
-Robot = engine.WalkEngine(kineState, footPlacement, stepOffsets)
+Robot = walkGen.WalkEngine(kineState, footPlacement, stepOffsets)
 
 for i in range(len(s_x)-1):  # don't take the last step because we don't have a future step.
     Robot.walk()

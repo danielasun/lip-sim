@@ -6,7 +6,6 @@ Introduction to Humanoid Robotics by Shuuji Kajita, et. al.
 Daniel Sun, September 8, 2015
 """
 
-# Imports
 from math import cosh, sinh, sqrt
 import matplotlib.pyplot as plt
 
@@ -47,21 +46,22 @@ class WalkEngine:
         the result of solving the EOM in the output lists so that you can write out the results to your
         motors/actuators etc.
 
+
         # Test for the output:
-        >>> import walkGen
+        >>> import engine
         >>> kineState = (0, 0, 0, 0)  # x, vx, y, vy
         >>> footPlacement = (0, 0)
         >>> s_x = [0, .3, .3, .3, .3, .3, 0]
         >>> s_y = [.2, .2, .2, .2, .2, .2, .2]
         >>> stepOffsets = zip(s_x, s_y)
-        >>> Robot = walkGen.WalkEngine(kineState, footPlacement, stepOffsets)
+        >>> Robot = engine.WalkEngine(kineState, footPlacement, stepOffsets)
         >>> Robot.walk()
         >>> Robot.walk()
         >>> Robot.walk()
         >>> Robot.walk()
         >>> Robot.walk()
         >>> Robot.walk()
-        >>> x, vx, y, vy = Robot.output(display_on=False)
+        >>> x, vx, y, vy, _, _  = Robot.output(display_on=False)
         Calculating output...
         >>> print x[-1], vx[-1], y[-1], vy[-1]
         1.49916897455 0.00234175498652 0.229792524926 -0.577113775217
@@ -195,7 +195,7 @@ def calcfootplace(p_x_last, p_y_last, s_x, s_y, step): # this equation is DONE
     Simply calculates the next footstep given the previous footsteps
     and the step lengths for the current one. If the 0th step is the starting
     position then the first leg to step is the left one. Kajita's index started
-    from 1, hence the difference.
+    from 1, hence the difference in calculating p_y.
 
     Returns p_x, p_y for the current step.
 
@@ -209,7 +209,7 @@ def calcfootplace(p_x_last, p_y_last, s_x, s_y, step): # this equation is DONE
     (2, 5)
 
     """
-    return p_x_last + s_x, p_y_last - ((-1)**step)*s_y
+    return p_x_last + s_x, p_y_last + ((-1)**step)*s_y
 
 
 def calcwalkprimitive(s_x_f, s_y_f, Tc, Tsup, step):
