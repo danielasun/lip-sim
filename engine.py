@@ -9,8 +9,28 @@ Daniel Sun, September 8, 2015
 from math import cosh, sinh, sqrt
 import matplotlib.pyplot as plt
 
-
 class WalkEngine:
+    """
+    WalkEngine class that handles all of the locomotion and movement.
+
+    Has two internal methods:
+    walk():     Based on given parameters, takes a single step and outputs solution to buffers.
+
+    output():   If display_on set to True, plots data from walk and returns output data.
+                This is a placeholder for the real output function that will control the motors.
+
+    Four static functions:
+    eomsolve():     Solves the equation of motion for an LIP given initial conditions and a time
+                    difference t.
+
+    calcfootplace():    Calculates where the next specified foot placement should be based on
+                        where the feet are currently and the next foot offset.
+
+    calcwalkprimitive():    Calculates the walk primitive for the next step, step n+1.
+
+    calcmodifiedfootplacement():    Calculates modified foot placement that minimizes the cost function.
+
+    """
     def __init__(self, kineState, footPlacement, stepOffsets):
         # non changable parameters.
         self.zHeight = .8
@@ -46,25 +66,60 @@ class WalkEngine:
         the result of solving the EOM in the output lists so that you can write out the results to your
         motors/actuators etc.
 
+        NOTE: The first specified foot placement for s_x and s_y should always be [0,0] so that the robot
+        is able to plan for its first step. The last specified placement should also be [0,0] to signify that
+        we will take no more steps. So our walk engine's specified walk parameters have two extra empty
+        elements, one at each end.
 
-        # Test for the output:
+        Should look identical to Kajita's first example.
         >>> import engine
+        >>>
         >>> kineState = (0, 0, 0, 0)  # x, vx, y, vy
         >>> footPlacement = (0, 0)
-        >>> s_x = [0, .3, .3, .3, .3, .3, 0]
-        >>> s_y = [.2, .2, .2, .2, .2, .2, .2]
+        >>> s_x = [0, .0, .3, .3, .3,  0, 0]
+        >>> s_y = [0, .2, .2, .2, .2, .2, 0]
         >>> stepOffsets = zip(s_x, s_y)
         >>> Robot = engine.WalkEngine(kineState, footPlacement, stepOffsets)
-        >>> Robot.walk()
-        >>> Robot.walk()
-        >>> Robot.walk()
-        >>> Robot.walk()
-        >>> Robot.walk()
-        >>> Robot.walk()
-        >>> x, vx, y, vy, _, _  = Robot.output(display_on=False)
-        Calculating output...
+        >>> for i in range(len(s_x)-1):
+        ...     Robot.walk()
+        ...
+        >>> x, vx, y, vy, p_x, p_y = Robot.output(display_on=True)
+        Displaying data...
         >>> print x[-1], vx[-1], y[-1], vy[-1]
-        1.49916897455 0.00234175498652 0.229792524926 -0.577113775217
+        0.899855456271 0.000364298356441 0.186482127746 0.0341082408285
+
+        Diagonal Walking, this time with the initial foot placement and CoM position offset.
+        >>> import engine
+        >>> kineState = (5, 0, 5, 0)  # x, vx, y, vy
+        >>> footPlacement = (5, 5)
+        >>> s_x = [0,  0, .2, .2, .2,  0, 0]
+        >>> s_y = [0, .2, .3, .1, .3, .2, 0]
+        >>> stepOffsets = zip(s_x, s_y)
+        >>> Robot = engine.WalkEngine(kineState, footPlacement, stepOffsets)
+        >>> for i in range(len(s_x)-1):  # don't take the last step because we don't have a future step.
+        ...     Robot.walk()
+        ...
+        >>> x, vx, y, vy, p_x, p_y = Robot.output(display_on=True)
+        Displaying data...
+        >>> print x[-1], vx[-1], y[-1], vy[-1]
+        5.59990363751 0.000242865570951 4.88880530388 0.0282577213072
+
+        Push recovery, starting with initial speed and velocity that are not zero.
+        >>> import engine
+        >>> kineState = (5, 1, 5, -1)  # x, vx, y, vy
+        >>> footPlacement = (5, 5)
+        >>> s_x = [0,  0, .2, .2, .2,  0, 0]
+        >>> s_y = [0, .2, .3, .1, .3, .2, 0]
+        >>> stepOffsets = zip(s_x, s_y)
+        >>> Robot = engine.WalkEngine(kineState, footPlacement, stepOffsets)
+        >>> for i in range(len(s_x)-1):  # don't take the last step because we don't have a future step.
+        ...     Robot.walk()
+        ...
+        >>> x, vx, y, vy, p_x, p_y = Robot.output(display_on=True)
+        Displaying data...
+        >>> print x[-1], vx[-1], y[-1], vy[-1]
+        5.59998763205 3.13411800095e-05 4.88872130934 0.0284692456981
+
         """
 
         # Renaming constants, just to make things a little less wordy.
@@ -79,7 +134,7 @@ class WalkEngine:
         self.p_ylist.append(self.py)
 
         # Calculate the walk primitive.
-        xbar, ybar, vxbar, vybar = calcwalkprimitive(self.sx[n+1], self.sx[n+1], Tc, Tsup, n)
+        xbar, ybar, vxbar, vybar = calcwalkprimitive(self.sx[n+1], self.sy[n+1], Tc, Tsup, n)
 
         # Calculate the target state.
         xd = self.px + xbar
@@ -195,21 +250,22 @@ def calcfootplace(p_x_last, p_y_last, s_x, s_y, step): # this equation is DONE
     Simply calculates the next footstep given the previous footsteps
     and the step lengths for the current one. If the 0th step is the starting
     position then the first leg to step is the left one. Kajita's index started
-    from 1, hence the difference in calculating p_y.
+    from 1, but our algorithm specifies the beginning step, so ours the same despite
+    having indices that start from 0.
 
     Returns p_x, p_y for the current step.
 
     >>> calcfootplace(0,0,1,1,0)
-    (1, 1)
-    >>> calcfootplace(0,0,1,1,1)
     (1, -1)
-    >>> calcfootplace(0,0,1,1,2)
+    >>> calcfootplace(0,0,1,1,1)
     (1, 1)
+    >>> calcfootplace(0,0,1,1,2)
+    (1, -1)
     >>> calcfootplace(3,3,-1,2,2)
-    (2, 5)
+    (2, 1)
 
     """
-    return p_x_last + s_x, p_y_last + ((-1)**step)*s_y
+    return p_x_last + s_x, p_y_last - ((-1)**step)*s_y
 
 
 def calcwalkprimitive(s_x_f, s_y_f, Tc, Tsup, step):
@@ -254,6 +310,7 @@ def calcwalkprimitive(s_x_f, s_y_f, Tc, Tsup, step):
     vybar = ybar*(C-1)/(Tc*S)
 
     return xbar, ybar, vxbar, vybar
+
 
 def calcmodifiedfootplacement(xd, vd, xi, vi, Tsup, z , a, b):
     """
