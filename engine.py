@@ -32,7 +32,7 @@ class WalkEngine:
 
     """
     def __init__(self, kineState, footPlacement, stepOffsets):
-        # non changable parameters.
+        # default parameters.
         self.zHeight = .8
         self.Tsup = .8
         self.Tc = sqrt(self.zHeight/9.81)
@@ -189,7 +189,7 @@ class WalkEngine:
 
             plt.figure(2)
             plt.plot(self.xout, self.yout, 'b--', self.pstarx, self.pstary, 'rx', self.p_xlist, self.p_ylist, 'ko')
-
+            #plt.gca().set_aspect('equal')
             plt.show()
         else:
             print "Calculating output..."
