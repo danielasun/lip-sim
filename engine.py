@@ -189,7 +189,14 @@ class WalkEngine:
 
             plt.figure(2)
             plt.plot(self.xout, self.yout, 'b--', self.pstarx, self.pstary, 'rx', self.p_xlist, self.p_ylist, 'ko')
-            #plt.gca().set_aspect('equal')
+
+            assert(len(self.pstarx) == len(self.pstary))
+
+            totalerror = 0
+            for i in range(len(self.pstarx)):
+                totalerror += sqrt((self.pstarx[i] - self.p_xlist[i])**2 + (self.pstary[i] - self.p_ylist[i])**2)
+            print "total error = " + str(totalerror)
+
             plt.show()
         else:
             print "Calculating output..."
